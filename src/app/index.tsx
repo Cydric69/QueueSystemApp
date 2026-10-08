@@ -1,98 +1,151 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// app/index.tsx
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Image, StatusBar, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
+import { hasAcceptedTerms } from "@/lib/agreement";
+import { C, SERIF } from "@/lib/theme";
+
+import HomeScreen from "@/screens/HomeScreen";
+import LiveQueueScreen from "@/screens/LiveQueueScreen";
+
+const LOGO = require("../components/bcclogo.jpg");
+
+type Tab = "home" | "queue";
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+export default function Index() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [checking, setChecking] = useState(true);
+  const [tab, setTab] = useState<Tab>("home");
+  const greeting = getGreeting();
+
+  useEffect(() => {
+    (async () => {
+      const accepted = await hasAcceptedTerms();
+      if (accepted) {
+        setChecking(false);
+      } else {
+        router.replace("/get-started");
+      }
+    })();
+  }, [router]);
+
+  if (checking) {
+    return <View className="flex-1 bg-white" />;
   }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <View className="flex-1 bg-white">
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      {/* ── SHARED HEADER ────────────────────────────────────── */}
+      <View
+        className="px-6 pb-3 bg-white"
+        style={{ paddingTop: insets.top + 20 }}
+      >
+        <View className="flex-row items-center">
+          <View
+            className="w-[52px] h-[52px] rounded-full border-2 items-center justify-center bg-white"
+            style={{ borderColor: C.navy }}
+          >
+            <Image
+              source={LOGO}
+              className="w-[42px] h-[42px] rounded-full"
+              resizeMode="contain"
+            />
+          </View>
+          <View className="ml-3.5 flex-1">
+            <Text
+              className="text-[10px] font-semibold uppercase tracking-[2px]"
+              style={{ color: C.navySoft }}
+            >
+              Binalbagan Catholic College
+            </Text>
+            <Text
+              className="text-[20px] mt-0.5"
+              style={{
+                color: C.navy,
+                fontFamily: SERIF,
+                fontWeight: "700",
+              }}
+            >
+              {tab === "home" ? greeting : "Live Queue"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Tab switcher */}
+        <View
+          className="flex-row rounded-full p-1 mt-6 border"
+          style={{ backgroundColor: C.tint, borderColor: C.border }}
+        >
+          <TabButton
+            label="Home"
+            icon="home"
+            active={tab === "home"}
+            onPress={() => setTab("home")}
+          />
+          <TabButton
+            label="Live Queue"
+            icon="sensors"
+            active={tab === "queue"}
+            onPress={() => setTab("queue")}
+          />
+        </View>
+      </View>
+
+      {/* ── SCREEN CONTENT ──────────────────────────────────── */}
+      <View className="flex-1">
+        {tab === "home" ? <HomeScreen /> : <LiveQueueScreen />}
+      </View>
+    </View>
   );
 }
 
-export default function HomeScreen() {
+function TabButton({
+  label,
+  icon,
+  active,
+  onPress,
+}: {
+  label: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
+  active: boolean;
+  onPress: () => void;
+}) {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      className="flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-full"
+      style={{ backgroundColor: active ? C.navy : "transparent" }}
+    >
+      <MaterialIcons
+        name={icon}
+        size={16}
+        color={active ? C.white : C.navySoft}
+      />
+      <Text
+        className="text-[13px] font-bold"
+        style={{ color: active ? C.white : C.navySoft }}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});
