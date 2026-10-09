@@ -25,6 +25,7 @@ export interface TicketReceiptData {
   queuePosition?: number | null;
   nowServing?: { ticketNumber: string; window?: string | null } | null;
   peopleAhead?: number | null;
+  assignedWindow?: string | null;
   createdAt?: string;
 }
 
@@ -53,7 +54,10 @@ export default function TicketReceiptModal({
   const formatAmount = (n?: number) =>
     n == null
       ? null
-      : `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      : `₱${n.toLocaleString("en-PH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`;
 
   return (
     <Modal
@@ -199,6 +203,30 @@ export default function TicketReceiptModal({
                   alignItems: "center",
                 }}
               >
+                {data.assignedWindow ? (
+                  <View
+                    style={{
+                      backgroundColor: C.navy,
+                      paddingHorizontal: 14,
+                      paddingVertical: 6,
+                      borderRadius: 999,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: C.white,
+                        fontSize: 11,
+                        fontWeight: "700",
+                        letterSpacing: 1.5,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {data.assignedWindow}
+                    </Text>
+                  </View>
+                ) : null}
+
                 <Text
                   style={{
                     fontSize: 10,
@@ -272,8 +300,8 @@ export default function TicketReceiptModal({
                   lineHeight: 16,
                 }}
               >
-                Watch the screen for your number. We'll also notify you when
-                it's your turn.
+                Watch the screen for your number. We&apos;ll also notify you
+                when it&apos;s your turn.
               </Text>
             </View>
           </ScrollView>
